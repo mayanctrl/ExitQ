@@ -1,9 +1,9 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Header } from '@/components/ui/../layout/Header';
-import { Sidebar } from '@/components/ui/../layout/Sidebar';
-import { MobileNav } from '@/components/ui/../layout/MobileNav';
+import { Header } from '@/components/layout/Header';
+import { Sidebar } from '@/components/layout/Sidebar';
+import { MobileNav } from '@/components/layout/MobileNav';
 import { NotificationDrawer } from '@/components/ui/NotificationDrawer';
 import { User, Notification } from '@/lib/types';
 import { SEED_HOD } from '@/lib/seed';
@@ -17,15 +17,21 @@ export default function HODLayout({ children }: { children: React.ReactNode }) {
     fetch('/api/auth/me')
       .then((res) => res.json())
       .then((data) => {
-        if (data.user) setUser(data.user);
+        if (data.user) {
+          setUser(data.user);
+        }
       })
       .catch(() => {});
-
-    fetch(`/api/notifications?userId=${SEED_HOD.id}`)
-      .then((res) => res.json())
-      .then((data) => setNotifications(data.notifications || []))
-      .catch(() => {});
   }, []);
+
+  useEffect(() => {
+    if (user?.id) {
+      fetch(`/api/notifications?userId=${user.id}`)
+        .then((res) => res.json())
+        .then((data) => setNotifications(data.notifications || []))
+        .catch(() => {});
+    }
+  }, [user]);
 
   const handleMarkRead = (id: string) => {
     fetch('/api/notifications', {
@@ -40,7 +46,7 @@ export default function HODLayout({ children }: { children: React.ReactNode }) {
   const unreadCount = notifications.filter((n) => !n.read).length;
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#f7f7f5]">
+    <div className="min-h-screen flex flex-col bg-[#f7f7f5] transition-colors">
       <Header
         currentUser={user}
         unreadCount={unreadCount}
@@ -49,7 +55,7 @@ export default function HODLayout({ children }: { children: React.ReactNode }) {
 
       <div className="flex-1 flex overflow-hidden">
         <Sidebar role="HOD" />
-        <main className="flex-1 overflow-y-auto p-4 md:p-8 pb-20 md:pb-8 max-w-7xl mx-auto w-full">
+        <main className="flex-1 overflow-y-auto p-4 md:p-6 pb-20 md:pb-6 max-w-7xl mx-auto w-full">
           {children}
         </main>
       </div>

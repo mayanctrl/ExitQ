@@ -11,9 +11,8 @@ import {
   Search,
   ArrowRight,
   Clock,
-  ExternalLink,
-  PlusCircle,
-  ShieldAlert,
+  UserPlus,
+  Calendar,
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -52,122 +51,91 @@ export default function HODDashboard() {
 
   return (
     <div className="space-y-6">
-      {/* Header Greeting & Application ID Search */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-3xl border border-[#e2dfd5] shadow-xs">
+      {/* Top Banner */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-[#e2dfd5]">
         <div>
-          <span className="text-xs font-bold text-[#588157] uppercase tracking-wider">
-            CAMPUS AUTHORIZATION ENGINE
-          </span>
-          <h1 className="text-2xl font-extrabold text-[#344e41] tracking-tight mt-0.5">
-            Good morning, Dr. Ananya Sharma
-          </h1>
-          <p className="text-xs text-gray-500 mt-1">
-            Computer Science & Engineering • Semester 4 Operational View
+          <h1 className="text-2xl font-black text-[#344e41] tracking-tight">HOD Control Center</h1>
+          <p className="text-xs text-gray-500 mt-0.5">
+            Campus exit authorization, timetable intelligence, and live student tracking
           </p>
         </div>
 
-        {/* Enter Application ID Box (Spec item 10) */}
-        <form onSubmit={handleSearchSubmit} className="flex gap-2 w-full md:w-auto">
-          <div className="relative flex-1 md:w-64">
+        {/* Quick Search */}
+        <form onSubmit={handleSearchSubmit} className="flex gap-2">
+          <div className="relative">
+            <Search className="h-3.5 w-3.5 text-gray-400 absolute left-3 top-3" />
             <input
               type="text"
-              placeholder="Enter App ID (e.g. EXQ-10495)"
+              placeholder="Search App ID (e.g. EXQ-10495)"
               value={searchId}
               onChange={(e) => setSearchId(e.target.value)}
-              className="w-full pl-9 pr-4 py-2.5 bg-[#fafaf7] border border-[#e2dfd5] rounded-xl text-xs font-bold text-[#344e41] placeholder:text-gray-400 focus:outline-none focus:border-[#588157]"
+              className="pl-8 pr-3 py-2 bg-white border border-[#e2dfd5] rounded-xl text-xs font-semibold text-[#344e41] placeholder:text-gray-400 focus:outline-none focus:border-[#588157] w-60"
             />
-            <Search className="h-4 w-4 text-gray-400 absolute left-3 top-3" />
           </div>
           <button
             type="submit"
             disabled={!searchId.trim()}
-            className="px-4 py-2.5 bg-[#344e41] text-[#dad7cd] font-bold text-xs rounded-xl hover:bg-[#3a5a40] disabled:opacity-50 transition-colors cursor-pointer"
+            className="px-3 py-2 bg-[#344e41] text-[#dad7cd] font-bold text-xs rounded-xl hover:bg-[#3a5a40] disabled:opacity-50 transition-colors cursor-pointer"
           >
             Review
           </button>
         </form>
       </div>
 
-      {/* Operational Metrics Cards (Spec item 39) */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white p-5 rounded-2xl border border-[#e2dfd5] shadow-xs space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">
-              Pending Approvals
-            </span>
-            <FileCheck2 className="h-5 w-5 text-[#b78103]" />
-          </div>
-          <div className="text-3xl font-extrabold text-[#344e41]">{pendingApps.length}</div>
-          <p className="text-[11px] text-[#b78103] font-semibold">Requires HOD Action</p>
+      {/* Metrics Row */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="bg-white p-4 rounded-xl border border-[#e2dfd5] shadow-xs">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400">PENDING DECISIONS</span>
+          <div className="text-2xl font-black text-[#b78103] mt-1">{pendingApps.length}</div>
+          <p className="text-[11px] text-gray-500">Requires Authorization</p>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl border border-[#e2dfd5] shadow-xs space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">
-              Currently Outside
-            </span>
-            <Users className="h-5 w-5 text-[#c62828]" />
-          </div>
-          <div className="text-3xl font-extrabold text-[#c62828]">{outsideStudents.length}</div>
-          <p className="text-[11px] text-gray-500 font-medium">Gate Exits Verified</p>
+        <div className="bg-white p-4 rounded-xl border border-[#e2dfd5] shadow-xs">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400">CURRENTLY OUTSIDE</span>
+          <div className="text-2xl font-black text-[#c62828] mt-1">{outsideStudents.length}</div>
+          <p className="text-[11px] text-gray-500">Verified at Gates</p>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl border border-[#e2dfd5] shadow-xs space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">
-              Active Permissions
-            </span>
-            <ShieldCheck className="h-5 w-5 text-[#2e7d32]" />
-          </div>
-          <div className="text-3xl font-extrabold text-[#2e7d32]">{activePermissions.length}</div>
-          <p className="text-[11px] text-[#2e7d32] font-semibold">Valid Passes Today</p>
+        <div className="bg-white p-4 rounded-xl border border-[#e2dfd5] shadow-xs">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400">ACTIVE PASSES</span>
+          <div className="text-2xl font-black text-[#2e7d32] mt-1">{activePermissions.length}</div>
+          <p className="text-[11px] text-gray-500">Valid QR Gate Passes</p>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl border border-[#e2dfd5] shadow-xs space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">
-              Timetable Conflicts
-            </span>
-            <AlertTriangle className="h-5 w-5 text-[#d97706]" />
-          </div>
-          <div className="text-3xl font-extrabold text-[#344e41]">1</div>
-          <p className="text-[11px] text-gray-500 font-medium">Auto-Evaluated Today</p>
+        <div className="bg-white p-4 rounded-xl border border-[#e2dfd5] shadow-xs">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400">TOTAL STUDENTS</span>
+          <div className="text-2xl font-black text-[#344e41] mt-1">{students.length}</div>
+          <p className="text-[11px] text-gray-500">Enrolled in Department</p>
         </div>
       </div>
 
-      {/* Pending Applications Table Section */}
-      <div className="bg-white rounded-3xl border border-[#e2dfd5] p-6 shadow-xs space-y-4">
+      {/* Pending Applications Section */}
+      <div className="bg-white rounded-2xl border border-[#e2dfd5] p-5 shadow-xs space-y-4">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-lg font-bold text-[#344e41]">Pending Exit Applications</h2>
-            <p className="text-xs text-gray-500">Applications waiting for HOD review and approval decision</p>
+            <h2 className="text-sm font-bold text-[#344e41] uppercase tracking-wider">Pending Student Requests</h2>
+            <p className="text-xs text-gray-500">Review reason, group details, and issue Conditional or Locked gate passes</p>
           </div>
-          <Link
-            href="/hod/applications"
-            className="text-xs font-bold text-[#588157] hover:underline flex items-center gap-1"
-          >
-            View All Applications →
+          <Link href="/hod/applications" className="text-xs font-bold text-[#588157] hover:underline">
+            View All →
           </Link>
         </div>
 
         {pendingApps.length === 0 ? (
-          <div className="text-center py-10 border border-dashed border-[#e2dfd5] rounded-2xl">
-            <ShieldCheck className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-            <p className="text-xs font-bold text-[#344e41]">No pending applications</p>
-            <p className="text-[11px] text-gray-400">All student exit requests have been evaluated.</p>
+          <div className="text-center py-8 border border-dashed border-[#e2dfd5] rounded-xl text-xs text-gray-400">
+            No pending exit requests.
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead>
-                <tr className="border-b border-[#e2dfd5] text-gray-400 font-bold uppercase tracking-wider text-[10px]">
-                  <th className="py-3 px-3">APP ID</th>
-                  <th className="py-3 px-3">STUDENT</th>
-                  <th className="py-3 px-3">REASON</th>
-                  <th className="py-3 px-3">EXIT TIME</th>
-                  <th className="py-3 px-3">GROUP</th>
-                  <th className="py-3 px-3">STATUS</th>
-                  <th className="py-3 px-3 text-right">ACTION</th>
+                <tr className="border-b border-[#e2dfd5] text-gray-400 font-bold uppercase text-[10px]">
+                  <th className="py-2.5 px-3">ID</th>
+                  <th className="py-2.5 px-3">STUDENT</th>
+                  <th className="py-2.5 px-3">PURPOSE</th>
+                  <th className="py-2.5 px-3">TIME WINDOW</th>
+                  <th className="py-2.5 px-3">STATUS</th>
+                  <th className="py-2.5 px-3 text-right">ACTION</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#e2dfd5]">
@@ -178,15 +146,12 @@ export default function HODDashboard() {
                       {app.studentName}
                       <span className="block text-[10px] text-gray-400 font-normal">{app.studentRoll}</span>
                     </td>
-                    <td className="py-3 px-3 text-gray-700">
+                    <td className="py-3 px-3">
                       <span className="font-semibold text-[#344e41] block">{app.reasonCategory}</span>
                       <span className="text-[11px] text-gray-500 truncate block max-w-xs">{app.reasonDescription}</span>
                     </td>
                     <td className="py-3 px-3 font-semibold text-[#344e41]">
                       {app.exitTime} – {app.expectedReturnTime}
-                    </td>
-                    <td className="py-3 px-3 font-semibold text-[#344e41]">
-                      {(app.accompanyingCount || 0) + 1} Student(s)
                     </td>
                     <td className="py-3 px-3">
                       <StatusBadge status={app.status} size="sm" />
@@ -194,9 +159,9 @@ export default function HODDashboard() {
                     <td className="py-3 px-3 text-right">
                       <Link
                         href={`/hod/applications/${app.id}`}
-                        className="inline-flex items-center gap-1 px-3 py-1.5 bg-[#344e41] text-[#dad7cd] font-bold text-xs rounded-lg hover:bg-[#3a5a40] transition-colors"
+                        className="inline-flex items-center gap-1 px-3 py-1.5 bg-[#344e41] text-[#dad7cd] font-bold text-xs rounded-lg hover:bg-[#588157] transition-colors"
                       >
-                        Review App →
+                        Review →
                       </Link>
                     </td>
                   </tr>
@@ -207,32 +172,26 @@ export default function HODDashboard() {
         )}
       </div>
 
-      {/* Campus Security Activity Timeline */}
-      <div className="bg-white rounded-3xl border border-[#e2dfd5] p-6 shadow-xs space-y-4">
+      {/* Security Audit Feed */}
+      <div className="bg-white rounded-2xl border border-[#e2dfd5] p-5 shadow-xs space-y-3">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-bold text-[#344e41]">Recent Gate Security Activity</h2>
+          <h2 className="text-sm font-bold text-[#344e41] uppercase tracking-wider">Gate Activity Stream</h2>
           <Link href="/hod/audit" className="text-xs font-bold text-[#588157] hover:underline">
-            Full Audit Log →
+            Full Audit Trail →
           </Link>
         </div>
 
-        <div className="space-y-3">
+        <div className="divide-y divide-[#e2dfd5] text-xs">
           {auditLogs.slice(0, 5).map((log) => (
-            <div key={log.id} className="p-3 bg-[#fafaf7] rounded-2xl border border-[#e2dfd5] flex items-center justify-between text-xs">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-xl bg-[#588157]/10 text-[#588157]">
-                  <Clock className="h-4 w-4" />
-                </div>
-                <div>
-                  <div className="font-bold text-[#344e41]">{log.action} • {log.target}</div>
-                  <div className="text-[11px] text-gray-500">{log.reason}</div>
-                </div>
+            <div key={log.id} className="py-2.5 flex items-center justify-between first:pt-0 last:pb-0">
+              <div>
+                <span className="font-bold text-[#344e41]">{log.action}</span>
+                <span className="text-gray-600 ml-2">{log.target}</span>
+                {log.reason && <p className="text-[11px] text-gray-500 mt-0.5">{log.reason}</p>}
               </div>
-              <div className="text-right">
-                <span className="font-bold text-[11px] text-[#344e41]">{log.actorName} ({log.actorRole})</span>
-                <span className="block text-[10px] text-gray-400">
-                  {new Date(log.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                </span>
+              <div className="text-right text-[11px] text-gray-400">
+                <span className="font-semibold text-[#344e41] block">{log.actorName}</span>
+                {new Date(log.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
               </div>
             </div>
           ))}

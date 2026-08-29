@@ -9,8 +9,7 @@ import { User, Notification } from '@/lib/types';
 import { SEED_GUARDS } from '@/lib/seed';
 
 export default function GuardLayout({ children }: { children: React.ReactNode }) {
-  const guardUser = SEED_GUARDS[0];
-  const [user, setUser] = useState<User>(guardUser);
+  const [user, setUser] = useState<User>(SEED_GUARDS[0]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [notifDrawerOpen, setNotifDrawerOpen] = useState(false);
 
@@ -18,15 +17,21 @@ export default function GuardLayout({ children }: { children: React.ReactNode })
     fetch('/api/auth/me')
       .then((res) => res.json())
       .then((data) => {
-        if (data.user) setUser(data.user);
+        if (data.user) {
+          setUser(data.user);
+        }
       })
       .catch(() => {});
-
-    fetch(`/api/notifications?userId=${guardUser.id}`)
-      .then((res) => res.json())
-      .then((data) => setNotifications(data.notifications || []))
-      .catch(() => {});
   }, []);
+
+  useEffect(() => {
+    if (user?.id) {
+      fetch(`/api/notifications?userId=${user.id}`)
+        .then((res) => res.json())
+        .then((data) => setNotifications(data.notifications || []))
+        .catch(() => {});
+    }
+  }, [user]);
 
   const handleMarkRead = (id: string) => {
     fetch('/api/notifications', {
@@ -41,7 +46,7 @@ export default function GuardLayout({ children }: { children: React.ReactNode })
   const unreadCount = notifications.filter((n) => !n.read).length;
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#f7f7f5]">
+    <div className="min-h-screen flex flex-col bg-[#f7f7f5] transition-colors">
       <Header
         currentUser={user}
         unreadCount={unreadCount}
@@ -50,7 +55,7 @@ export default function GuardLayout({ children }: { children: React.ReactNode })
 
       <div className="flex-1 flex overflow-hidden">
         <Sidebar role="GUARD" />
-        <main className="flex-1 overflow-y-auto p-4 md:p-8 pb-24 md:pb-8 max-w-4xl mx-auto w-full">
+        <main className="flex-1 overflow-y-auto p-4 md:p-6 pb-24 md:pb-6 max-w-4xl mx-auto w-full">
           {children}
         </main>
       </div>

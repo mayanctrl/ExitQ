@@ -13,8 +13,7 @@ import {
   Bell,
   History,
   QrCode,
-  LogOut,
-  UserCheck,
+  UserPlus,
   PlusCircle,
   Clock,
   Send,
@@ -33,75 +32,74 @@ export const Sidebar: React.FC<SidebarProps> = ({ role }) => {
     HOD: [
       { label: 'Dashboard', href: '/hod', icon: LayoutDashboard },
       { label: 'Applications', href: '/hod/applications', icon: FileCheck2 },
-      { label: 'Students', href: '/hod/students', icon: Users },
       { label: 'Timetable', href: '/hod/timetable', icon: CalendarDays },
       { label: 'Permissions', href: '/hod/permissions', icon: ShieldAlert },
-      { label: 'Notifications', href: '/hod/notifications', icon: Bell },
+      { label: 'Students', href: '/hod/students', icon: Users },
+      { label: 'Institutional Accounts', href: '/hod/accounts', icon: UserPlus },
       { label: 'Audit Log', href: '/hod/audit', icon: History },
+      { label: 'Notifications', href: '/hod/notifications', icon: Bell },
     ],
     FACULTY: [
       { label: 'Dashboard', href: '/faculty', icon: LayoutDashboard },
       { label: 'My Timetable', href: '/faculty/timetable', icon: CalendarDays },
       { label: 'Extra Lectures', href: '/faculty/extra-lectures', icon: PlusCircle },
-      { label: 'Students', href: '/faculty/students', icon: Users },
       { label: 'Permissions', href: '/faculty/permissions', icon: ShieldAlert },
+      { label: 'Students', href: '/faculty/students', icon: Users },
       { label: 'Notifications', href: '/faculty/notifications', icon: Bell },
     ],
     GUARD: [
-      { label: 'Scan ExitQ', href: '/guard', icon: QrCode },
+      { label: 'Scan Gate Pass', href: '/guard', icon: QrCode },
       { label: "Today's Exits", href: '/guard/exits', icon: Clock },
       { label: 'Currently Outside', href: '/guard/outside', icon: Users },
     ],
     STUDENT: [
-      { label: 'Home', href: '/student', icon: LayoutDashboard },
+      { label: 'Dashboard', href: '/student', icon: LayoutDashboard },
       { label: 'Request Exit', href: '/student/request', icon: Send },
-      { label: 'My Applications', href: '/student/applications', icon: FileCheck2 },
       { label: 'My Passes', href: '/student/passes', icon: Ticket },
+      { label: 'Application History', href: '/student/applications', icon: FileCheck2 },
       { label: 'Notifications', href: '/student/notifications', icon: Bell },
       { label: 'Profile', href: '/student/profile', icon: UserIcon },
     ],
   }[role] || [];
 
   return (
-    <aside className="w-64 border-r border-[#e2dfd5] bg-[#ffffff] flex flex-col justify-between hidden md:flex shrink-0 min-h-[calc(100vh-4rem)]">
-      <div className="p-4 space-y-6">
-        {/* Role Badge Indicator */}
-        <div className="rounded-xl bg-[#dad7cd]/20 border border-[#a3b18a]/30 p-3">
-          <div className="text-[10px] font-bold uppercase tracking-wider text-[#588157]">
-            Authorized View
-          </div>
-          <div className="font-bold text-[#344e41] text-sm mt-0.5">{role} Control Center</div>
-          <p className="text-[11px] text-gray-500 mt-0.5">Role-scoped actions & intelligence</p>
+    <aside className="w-60 border-r border-[#e2dfd5] bg-white flex flex-col justify-between hidden md:flex shrink-0 min-h-[calc(100vh-3.5rem)] transition-colors">
+      <div className="p-3.5 space-y-4">
+        {/* Header Label */}
+        <div className="px-3 pt-2 pb-1">
+          <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#588157]">
+            {role} PORTAL
+          </span>
         </div>
 
-        {/* Navigation Items */}
-        <nav className="space-y-1">
+        {/* Nav Items */}
+        <nav className="space-y-0.5">
           {navItems.map((item) => {
             const Icon = item.icon;
-            const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
+            const isActive = pathname === item.href || (item.href !== `/${role.toLowerCase()}` && pathname.startsWith(item.href));
 
             return (
               <Link
                 key={item.href}
                 href={item.href}
-                className={`flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-xs font-semibold transition-all ${
+                className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold transition-all ${
                   isActive
                     ? 'bg-[#344e41] text-[#dad7cd] shadow-xs'
-                    : 'text-[#344e41] hover:bg-[#dad7cd]/20 hover:text-[#344e41]'
+                    : 'text-[#344e41] hover:bg-[#fafaf7] hover:text-[#588157]'
                 }`}
               >
-                <Icon className={`h-4 w-4 ${isActive ? 'text-[#a3b18a]' : 'text-[#588157]'}`} />
-                {item.label}
+                <Icon className={`h-4 w-4 shrink-0 ${isActive ? 'text-[#a3b18a]' : 'text-[#588157]'}`} />
+                <span className="truncate">{item.label}</span>
               </Link>
             );
           })}
         </nav>
       </div>
 
-      {/* Footer Info */}
-      <div className="p-4 border-t border-[#e2dfd5] bg-[#fafaf7]">
-        <div className="text-[11px] text-gray-500 font-medium">ExitQ Engine v1.0</div>
-        <div className="text-[10px] text-[#588157] font-semibold">Campus Geofence: Active</div>
+      {/* Footer Meta */}
+      <div className="p-3.5 border-t border-[#e2dfd5] text-[11px] text-gray-400 flex items-center justify-between">
+        <span>ExitQ Engine</span>
+        <span className="text-[#588157] font-semibold text-[10px]">● Active</span>
       </div>
     </aside>
   );

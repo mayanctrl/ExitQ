@@ -1,155 +1,199 @@
 'use client';
 
 import React, { useState } from 'react';
-import { DEMO_ACCOUNTS } from '@/lib/auth';
-import { ShieldCheck, UserCheck, ArrowRight, QrCode, Clock, CalendarDays, CheckCircle2, Lock } from 'lucide-react';
 import Link from 'next/link';
+import { ShieldCheck, ArrowRight, Lock, Mail, KeyRound, AlertCircle } from 'lucide-react';
 
-export default function Home() {
-  const [loadingEmail, setLoadingEmail] = useState<string | null>(null);
+export default function SignInPage() {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [showDemoSelector, setShowDemoSelector] = useState(false);
 
-  const handleLogin = (email: string, role: string) => {
-    setLoadingEmail(email);
-    fetch('/api/auth/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email }),
-    }).then(() => {
-      window.location.href = `/${role.toLowerCase()}`;
-    });
+  const handleSignIn = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setLoading(true);
+
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        setError(data.error || 'Invalid credentials');
+        setLoading(false);
+        return;
+      }
+
+      // Successful login -> Redirect
+      window.location.href = data.redirectUrl || '/';
+    } catch (err: any) {
+      setError(err.message || 'An unexpected error occurred');
+      setLoading(false);
+    }
+  };
+
+  const handleQuickFill = (demoEmail: string, demoPass: string) => {
+    setEmail(demoEmail);
+    setPassword(demoPass);
+    setError(null);
   };
 
   return (
-    <div className="min-h-screen bg-[#f7f7f5] flex flex-col justify-between p-4 md:p-8">
-      {/* Top Brand Bar */}
-      <header className="max-w-6xl mx-auto w-full flex items-center justify-between py-4">
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#344e41] text-[#dad7cd] font-bold text-xl shadow-md">
-            EQ
-          </div>
-          <div>
-            <h1 className="font-extrabold text-xl text-[#344e41] tracking-tight">ExitQ</h1>
-            <p className="text-xs text-[#588157] font-semibold">Smart Exit. Secure Campus.</p>
-          </div>
+    <div className="min-h-screen bg-[#f7f7f5] flex flex-col justify-between p-4 sm:p-8 transition-colors">
+      {/* Top Brand Header */}
+      <header className="max-w-md mx-auto w-full pt-4 text-center">
+        <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[#344e41] text-[#dad7cd] font-black text-xl shadow-xs mb-3">
+          EQ
         </div>
-        <div className="flex items-center gap-2 text-xs font-semibold text-[#344e41] bg-[#dad7cd]/30 px-3 py-1.5 rounded-xl border border-[#a3b18a]/40">
-          <span className="w-2 h-2 rounded-full bg-[#588157] animate-pulse" />
-          Campus Authorization Engine Active
-        </div>
+        <h1 className="text-2xl font-black text-[#344e41] tracking-tight">ExitQ</h1>
+        <p className="text-xs font-semibold text-[#588157] mt-0.5">Smart Exit. Secure Campus.</p>
       </header>
 
-      {/* Main Hero & Role Launcher */}
-      <main className="max-w-5xl mx-auto w-full my-auto py-8 space-y-10">
-        {/* Title Section */}
-        <div className="text-center space-y-3 max-w-2xl mx-auto">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#588157]/10 text-[#3a5a40] text-xs font-bold uppercase tracking-wider">
-            <ShieldCheck className="h-4 w-4" /> Timetable-Aware Gate-Pass Engine
+      {/* Main Sign In Form Container */}
+      <main className="max-w-md mx-auto w-full my-auto py-6">
+        <div className="bg-white p-6 sm:p-8 rounded-2xl border border-[#e2dfd5] shadow-xs space-y-6">
+          <div>
+            <h2 className="text-lg font-bold text-[#344e41] tracking-tight">Institutional Sign In</h2>
+            <p className="text-xs text-gray-500 mt-1">
+              Enter your verified college email and password to access your role dashboard.
+            </p>
           </div>
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-[#344e41] tracking-tight">
-            Centralized Campus Exit Management
-          </h2>
-          <p className="text-sm text-gray-600 leading-relaxed">
-            ExitQ continuously evaluates student exit permissions against live timetable schedules, extra lecture additions, and campus security geofences.
-          </p>
+
+          {error && (
+            <div className="p-3 bg-red-50 border border-red-200 text-[#c62828] rounded-xl text-xs flex items-center gap-2">
+              <AlertCircle className="h-4 w-4 shrink-0" />
+              <span>{error}</span>
+            </div>
+          )}
+
+          <form onSubmit={handleSignIn} className="space-y-4">
+            <div>
+              <label className="block text-xs font-bold text-[#344e41] mb-1.5">College / Institutional Email</label>
+              <div className="relative">
+                <Mail className="h-4 w-4 absolute left-3 top-3 text-gray-400" />
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="name@sbjit.edu.in or student email"
+                  required
+                  className="w-full pl-9 pr-3 py-2.5 bg-[#fafaf7] border border-[#e2dfd5] rounded-xl text-xs font-medium text-[#344e41] focus:outline-none focus:border-[#588157]"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-[#344e41] mb-1.5">Password</label>
+              <div className="relative">
+                <KeyRound className="h-4 w-4 absolute left-3 top-3 text-gray-400" />
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  required
+                  className="w-full pl-9 pr-3 py-2.5 bg-[#fafaf7] border border-[#e2dfd5] rounded-xl text-xs font-medium text-[#344e41] focus:outline-none focus:border-[#588157]"
+                />
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full py-3 bg-[#344e41] hover:bg-[#3a5a40] text-[#dad7cd] font-bold text-xs rounded-xl transition-colors shadow-xs flex items-center justify-center gap-2 cursor-pointer mt-2"
+            >
+              {loading ? (
+                <span>Signing In...</span>
+              ) : (
+                <>
+                  <span>Sign In</span>
+                  <ArrowRight className="h-4 w-4 text-[#a3b18a]" />
+                </>
+              )}
+            </button>
+          </form>
+
+          {/* Student Signup Link */}
+          <div className="pt-4 border-t border-[#e2dfd5] text-center text-xs">
+            <span className="text-gray-500">Don't have an account? </span>
+            <Link href="/signup" className="font-bold text-[#588157] hover:underline">
+              Student Sign Up
+            </Link>
+          </div>
         </div>
 
-        {/* Role Selector Grid */}
-        <div className="space-y-4">
-          <div className="flex items-center justify-between border-b border-[#e2dfd5] pb-2">
-            <span className="text-xs font-extrabold text-[#344e41] uppercase tracking-wider">
-              SELECT DEMO ROLE INTERFACE TO EXPLORE
-            </span>
-            <span className="text-[11px] text-gray-400 font-medium">Click any role to launch interface</span>
-          </div>
+        {/* Demo Accounts Quick-Fill Helper */}
+        <div className="mt-4 text-center">
+          <button
+            type="button"
+            onClick={() => setShowDemoSelector(!showDemoSelector)}
+            className="text-[11px] font-semibold text-gray-400 hover:text-[#588157] transition-colors cursor-pointer"
+          >
+            {showDemoSelector ? 'Hide Demo Logins ▲' : 'Show Demo Credentials for Testing ▼'}
+          </button>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {DEMO_ACCOUNTS.map((acc) => {
-              const roleColors = {
-                HOD: 'border-[#344e41] hover:bg-[#344e41]/5',
-                FACULTY: 'border-[#588157] hover:bg-[#588157]/5',
-                GUARD: 'border-[#3a5a40] hover:bg-[#3a5a40]/5',
-                STUDENT: 'border-[#a3b18a] hover:bg-[#a3b18a]/5',
-              }[acc.role];
-
-              const roleBadge = {
-                HOD: 'bg-[#344e41] text-white',
-                FACULTY: 'bg-[#588157] text-white',
-                GUARD: 'bg-[#3a5a40] text-white',
-                STUDENT: 'bg-[#a3b18a] text-[#344e41]',
-              }[acc.role];
-
-              return (
+          {showDemoSelector && (
+            <div className="mt-3 p-3 bg-white rounded-xl border border-[#e2dfd5] text-left text-xs space-y-2 animate-in fade-in duration-150">
+              <div className="text-[10px] font-extrabold uppercase text-[#588157] tracking-wider">
+                Click any account to pre-fill credentials:
+              </div>
+              <div className="grid grid-cols-2 gap-1.5">
                 <button
-                  key={acc.email}
-                  onClick={() => handleLogin(acc.email, acc.role)}
-                  disabled={loadingEmail === acc.email}
-                  className={`bg-white rounded-2xl p-5 border-2 text-left transition-all duration-200 shadow-xs hover:shadow-md cursor-pointer flex flex-col justify-between space-y-4 group ${roleColors}`}
+                  type="button"
+                  onClick={() => handleQuickFill('mayankhobragade.ee24@sbjit.edu.in', 'cubes88')}
+                  className="p-2 text-left rounded-lg bg-[#fafaf7] hover:bg-[#344e41]/10 border border-[#e2dfd5]"
                 >
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className={`px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider ${roleBadge}`}>
-                        {acc.role}
-                      </span>
-                      <ArrowRight className="h-4 w-4 text-gray-400 group-hover:text-[#344e41] group-hover:translate-x-1 transition-all" />
-                    </div>
-                    <div>
-                      <h3 className="font-bold text-[#344e41] text-base group-hover:text-[#588157] transition-colors">
-                        {acc.name}
-                      </h3>
-                      <p className="text-xs text-gray-500 font-medium">{acc.title}</p>
-                    </div>
-                  </div>
-
-                  <div className="pt-3 border-t border-[#e2dfd5]/60 text-[11px] text-[#588157] font-semibold flex items-center gap-1.5">
-                    <UserCheck className="h-3.5 w-3.5" /> Launch {acc.label} →
-                  </div>
+                  <div className="font-bold text-[#344e41]">Admin / HOD</div>
+                  <div className="text-[10px] text-gray-500 truncate">mayankhobragade.ee24@sbjit.edu.in</div>
                 </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Feature Highlights Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4">
-          <div className="bg-white p-4 rounded-2xl border border-[#e2dfd5] space-y-2">
-            <div className="flex items-center gap-2 text-[#588157] font-bold text-xs">
-              <CalendarDays className="h-4 w-4" /> Timetable Conflict Engine
+                <button
+                  type="button"
+                  onClick={() => handleQuickFill('hod.cs@exitq.edu', 'cubes88')}
+                  className="p-2 text-left rounded-lg bg-[#fafaf7] hover:bg-[#344e41]/10 border border-[#e2dfd5]"
+                >
+                  <div className="font-bold text-[#344e41]">Dr. Ananya (HOD)</div>
+                  <div className="text-[10px] text-gray-500 truncate">hod.cs@exitq.edu</div>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleQuickFill('rajesh.kumar@exitq.edu', 'cubes88')}
+                  className="p-2 text-left rounded-lg bg-[#fafaf7] hover:bg-[#344e41]/10 border border-[#e2dfd5]"
+                >
+                  <div className="font-bold text-[#344e41]">Faculty</div>
+                  <div className="text-[10px] text-gray-500 truncate">rajesh.kumar@exitq.edu</div>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleQuickFill('guard.gate1@exitq.edu', 'cubes88')}
+                  className="p-2 text-left rounded-lg bg-[#fafaf7] hover:bg-[#344e41]/10 border border-[#e2dfd5]"
+                >
+                  <div className="font-bold text-[#344e41]">Security Guard</div>
+                  <div className="text-[10px] text-gray-500 truncate">guard.gate1@exitq.edu</div>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleQuickFill('aarav.mehta@student.exitq.edu', 'cubes88')}
+                  className="col-span-2 p-2 text-left rounded-lg bg-[#fafaf7] hover:bg-[#344e41]/10 border border-[#e2dfd5]"
+                >
+                  <div className="font-bold text-[#344e41]">Student (Aarav Mehta)</div>
+                  <div className="text-[10px] text-gray-500 truncate">aarav.mehta@student.exitq.edu</div>
+                </button>
+              </div>
             </div>
-            <p className="text-xs text-gray-600 leading-normal">
-              When faculty schedule unexpected extra lectures, ExitQ automatically revokes affected conditional passes while keeping protected locked passes valid.
-            </p>
-          </div>
-
-          <div className="bg-white p-4 rounded-2xl border border-[#e2dfd5] space-y-2">
-            <div className="flex items-center gap-2 text-[#588157] font-bold text-xs">
-              <QrCode className="h-4 w-4" /> Single-Use QR & Gate Check
-            </div>
-            <p className="text-xs text-gray-600 leading-normal">
-              Guards scan passes at gates. The backend evaluates permission status, student ID, location geofence, and unused QR status in real-time.
-            </p>
-          </div>
-
-          <div className="bg-white p-4 rounded-2xl border border-[#e2dfd5] space-y-2">
-            <div className="flex items-center gap-2 text-[#588157] font-bold text-xs">
-              <Lock className="h-4 w-4" /> HOD Conditional vs Locked
-            </div>
-            <p className="text-xs text-gray-600 leading-normal">
-              HOD can grant default Conditional approval or Locked protection (for official duties/medical emergencies) that resists subsequent timetable updates.
-            </p>
-          </div>
+          )}
         </div>
       </main>
 
       {/* Footer */}
-      <footer className="max-w-6xl mx-auto w-full text-center py-4 border-t border-[#e2dfd5] text-xs text-gray-500 flex flex-col sm:flex-row items-center justify-between gap-2">
-        <div>
-          ExitQ — Production prototype built for campus exit management.
-        </div>
-        <div className="flex items-center gap-4 text-[11px] text-[#588157] font-semibold">
-          <span>✓ Hackathon Verified</span>
-          <span>✓ Audit Logged</span>
-          <span>✓ Geofenced</span>
-        </div>
+      <footer className="max-w-md mx-auto w-full text-center pb-2 text-[11px] text-gray-400">
+        ExitQ Campus Exit & Timetable Intelligence Engine
       </footer>
     </div>
   );

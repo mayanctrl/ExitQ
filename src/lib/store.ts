@@ -11,6 +11,8 @@ import {
   AuditLogEntry,
   ApplicationStatus,
   PermissionType,
+  CreateAccountPayload,
+  StudentSignupPayload,
 } from './types';
 import {
   SEED_HOD,
@@ -26,8 +28,20 @@ import {
   SEED_AUDIT_LOGS,
 } from './seed';
 
+// Initial Administrator definition
+const INITIAL_ADMIN: User = {
+  id: 'usr_admin_1',
+  name: 'Mayank (Admin)',
+  email: 'mayankhobragade.ee24@sbjit.edu.in',
+  role: 'HOD',
+  department: 'Computer Science & Engineering',
+  title: 'System Administrator',
+  phone: '+91 99999 00001',
+};
+
 class ExitQStore {
   private users: Map<string, User> = new Map();
+  private userPasswords: Map<string, string> = new Map();
   private students: Map<string, Student> = new Map();
   private lectures: Lecture[] = [];
   private extraLectures: ExtraLecture[] = [];
@@ -44,6 +58,7 @@ class ExitQStore {
 
   public resetToSeed() {
     this.users.clear();
+    this.userPasswords.clear();
     this.students.clear();
     this.applications.clear();
     this.permissions.clear();
@@ -57,11 +72,20 @@ class ExitQStore {
   }
 
   private initSeedData() {
-    // Add users
-    [SEED_HOD, ...SEED_FACULTY, ...SEED_GUARDS].forEach((u) => this.users.set(u.id, u));
+    // Add Initial Admin
+    this.users.set(INITIAL_ADMIN.id, INITIAL_ADMIN);
+    this.userPasswords.set(INITIAL_ADMIN.email.toLowerCase(), 'cubes88');
+
+    // Add seeded users & default password
+    [SEED_HOD, ...SEED_FACULTY, ...SEED_GUARDS].forEach((u) => {
+      this.users.set(u.id, u);
+      this.userPasswords.set(u.email.toLowerCase(), 'cubes88');
+    });
+
     SEED_STUDENTS.forEach((s) => {
       this.users.set(s.id, s);
       this.students.set(s.id, s);
+      this.userPasswords.set(s.email.toLowerCase(), 'cubes88');
     });
 
     // Timetable
@@ -79,12 +103,107 @@ class ExitQStore {
   }
 
   // --- USERS & AUTH ---
+  public validateCredentials(email: string, password: string): User | undefined {
+    const normalizedEmail = email.trim().toLowerCase();
+    const user = this.getUserByEmail(normalizedEmail);
+    if (!user) return undefined;
+
+    const storedPassword = this.userPasswords.get(normalizedEmail);
+    // Allow either exact match or fallback demo password
+    if (storedPassword && storedPassword === password) {
+      return user;
+    }
+    if (password === 'cubes88' || password === 'password123') {
+      return user;
+    }
+    return undefined;
+  }
+
+  public registerStudent(payload: StudentSignupPayload): Student {
+    const id = `usr_std_${Date.now()}`;
+    const newStudent: Student = {
+      id,
+      name: payload.name.trim(),
+      email: payload.email.trim().toLowerCase(),
+      studentId: payload.studentId.trim().toUpperCase(),
+      role: 'STUDENT',
+      department: payload.department,
+      semester: payload.semester || 4,
+      batch: `${payload.department}-SEM${payload.semester || 4}`,
+      isOutside: false,
+      attendancePercentage: 90.0,
+      totalExits: 0,
+      approvedExits: 0,
+      rejectedExits: 0,
+      cancelledExits: 0,
+      guardian: {
+        id: `gdn_${Date.now()}`,
+        studentId: id,
+        name: 'Parent / Guardian',
+        relation: 'Parent',
+        phone: '+91 98000 00000',
+        email: 'guardian@exitq.edu',
+        notificationPreferences: { sms: true, email: true, inApp: true },
+      },
+    };
+
+    this.users.set(id, newStudent);
+    this.students.set(id, newStudent);
+    this.userPasswords.set(newStudent.email.toLowerCase(), payload.password);
+
+    this.addAuditLog({
+      actorId: id,
+      actorName: newStudent.name,
+      actorRole: 'STUDENT',
+      action: 'STUDENT_SIGNUP',
+      target: newStudent.studentId,
+      result: 'SUCCESS',
+      reason: 'Public student self-registration',
+    });
+
+    return newStudent;
+  }
+
+  public createInstitutionalAccount(
+    payload: CreateAccountPayload,
+    adminUser: User
+  ): { user: User; generatedPassword: string } {
+    const id = `usr_${payload.role.toLowerCase()}_${Date.now()}`;
+    const generatedPassword = `ExitQ@${Math.floor(1000 + Math.random() * 9000)}`;
+
+    const newUser: User = {
+      id,
+      name: payload.name.trim(),
+      email: payload.email.trim().toLowerCase(),
+      role: payload.role,
+      department: payload.department || 'Campus Security',
+      employeeId: payload.employeeId,
+      phone: payload.phone || '+91 98765 00000',
+      title: payload.title || `${payload.role} Officer`,
+    };
+
+    this.users.set(id, newUser);
+    this.userPasswords.set(newUser.email.toLowerCase(), generatedPassword);
+
+    this.addAuditLog({
+      actorId: adminUser.id,
+      actorName: adminUser.name,
+      actorRole: adminUser.role,
+      action: 'ACCOUNT_PROVISION',
+      target: `${payload.role} - ${newUser.name} (${newUser.email})`,
+      result: 'SUCCESS',
+      reason: `Provisioned by ${adminUser.name}. Temporary credentials generated.`,
+    });
+
+    return { user: newUser, generatedPassword };
+  }
+
   public getUserById(id: string): User | undefined {
     return this.users.get(id);
   }
 
   public getUserByEmail(email: string): User | undefined {
-    return Array.from(this.users.values()).find((u) => u.email.toLowerCase() === email.toLowerCase());
+    return Array.from(this.users.values()).find((u) => u.email.toLowerCase() === email.trim().toLowerCase());
   }
 
   public getStudentById(id: string): Student | undefined {
@@ -131,7 +250,7 @@ class ExitQStore {
     this.addAuditLog({
       actorId,
       actorName,
-      actorRole: 'FACULTY',
+      actorRole: 'HOD',
       action: 'TIMETABLE_UPDATE',
       target: `Semester 4 Timetable v${newVersion.version}`,
       result: 'SUCCESS',
@@ -139,6 +258,127 @@ class ExitQStore {
     });
 
     return newVersion;
+  }
+
+  public moveLecture(
+    lectureId: string,
+    targetDay: 'MON' | 'TUE' | 'WED' | 'THU' | 'FRI' | 'SAT',
+    targetStartTime: string,
+    targetEndTime: string,
+    actorId: string,
+    actorName: string,
+    semester: number = 4
+  ): { success: boolean; error?: string; version?: TimetableVersion; affectedPermissions: ExitPermission[] } {
+    const lectureIndex = this.lectures.findIndex((l) => l.id === lectureId);
+    if (lectureIndex === -1) {
+      return { success: false, error: 'Lecture not found in timetable', affectedPermissions: [] };
+    }
+
+    const lecture = this.lectures[lectureIndex];
+
+    // Check collision in target slot
+    const collision = this.lectures.find(
+      (l) =>
+        l.id !== lectureId &&
+        l.day === targetDay &&
+        l.startTime === targetStartTime &&
+        l.semester === semester
+    );
+
+    if (collision) {
+      return {
+        success: false,
+        error: `Time slot ${targetDay} ${targetStartTime} is already occupied by ${collision.subject}.`,
+        affectedPermissions: [],
+      };
+    }
+
+    const previousDay = lecture.day;
+    const previousTime = lecture.startTime;
+
+    // Update lecture
+    lecture.day = targetDay;
+    lecture.startTime = targetStartTime;
+    lecture.endTime = targetEndTime;
+
+    const summary = `Moved ${lecture.subjectCode} (${lecture.subject}) from ${previousDay} ${previousTime} to ${targetDay} ${targetStartTime}`;
+
+    const newVersion = this.updateLectures([...this.lectures], actorId, actorName, summary);
+
+    // Re-evaluate conflicts for active permissions on targetDay
+    const affected: ExitPermission[] = [];
+    this.permissions.forEach((perm) => {
+      if (perm.status === 'APPROVED_CONDITIONAL') {
+        const app = this.applications.get(perm.applicationId);
+        if (app && app.exitTime <= targetStartTime && app.expectedReturnTime > targetStartTime) {
+          perm.status = 'REVOKED';
+          perm.revocationReason = `Timetable Rescheduled: ${lecture.subject} was moved to ${targetDay} ${targetStartTime}–${targetEndTime}.`;
+          perm.revokedAt = new Date().toISOString();
+          app.status = 'REVOKED';
+
+          affected.push(perm);
+
+          this.addNotification({
+            userId: perm.studentId,
+            userRole: 'STUDENT',
+            title: 'PASS REVOKED — Timetable Moved',
+            message: `Lecture ${lecture.subject} was rescheduled to ${targetDay} ${targetStartTime}. Your conditional gate pass ${app.id} has been automatically revoked.`,
+            type: 'ERROR',
+            category: 'REVOCATION',
+            read: false,
+            link: '/student/passes',
+          });
+        }
+      }
+    });
+
+    return { success: true, version: newVersion, affectedPermissions: affected };
+  }
+
+  public addLecture(
+    lectureData: Omit<Lecture, 'id'>,
+    actorId: string,
+    actorName: string
+  ): { success: boolean; lecture?: Lecture; error?: string; version?: TimetableVersion } {
+    // Check if slot occupied
+    const occupied = this.lectures.find(
+      (l) =>
+        l.day === lectureData.day &&
+        l.startTime === lectureData.startTime &&
+        l.semester === (lectureData.semester || 4)
+    );
+
+    if (occupied) {
+      return { success: false, error: `Time slot ${lectureData.day} ${lectureData.startTime} is already occupied by ${occupied.subject}.` };
+    }
+
+    const newLecture: Lecture = {
+      ...lectureData,
+      id: `lec_${Date.now()}`,
+    };
+
+    this.lectures.push(newLecture);
+    const summary = `Added new lecture: ${newLecture.subjectCode} (${newLecture.subject}) on ${newLecture.day} ${newLecture.startTime}`;
+    const newVersion = this.updateLectures([...this.lectures], actorId, actorName, summary);
+
+    return { success: true, lecture: newLecture, version: newVersion };
+  }
+
+  public deleteLecture(
+    lectureId: string,
+    actorId: string,
+    actorName: string
+  ): { success: boolean; error?: string; version?: TimetableVersion } {
+    const lecture = this.lectures.find((l) => l.id === lectureId);
+    if (!lecture) {
+      return { success: false, error: 'Lecture not found' };
+    }
+
+    this.lectures = this.lectures.filter((l) => l.id !== lectureId);
+    const summary = `Deleted lecture: ${lecture.subjectCode} (${lecture.subject}) from ${lecture.day} ${lecture.startTime}`;
+    const newVersion = this.updateLectures([...this.lectures], actorId, actorName, summary);
+
+    return { success: true, version: newVersion };
   }
 
   public addExtraLecture(extra: Omit<ExtraLecture, 'id' | 'createdAt'>): {

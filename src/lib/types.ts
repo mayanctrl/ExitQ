@@ -28,6 +28,35 @@ export interface User {
   avatarUrl?: string;
   phone?: string;
   title?: string;
+  employeeId?: string;
+  password?: string;
+}
+
+export interface CreateAccountPayload {
+  role: 'HOD' | 'FACULTY' | 'GUARD';
+  name: string;
+  email: string;
+  employeeId: string;
+  department?: string;
+  phone?: string;
+  title?: string;
+}
+
+export interface StudentSignupPayload {
+  name: string;
+  studentId: string;
+  email: string;
+  password: string;
+  department: string;
+  semester: number;
+}
+
+export interface TimetableMovePayload {
+  lectureId: string;
+  targetDay: 'MON' | 'TUE' | 'WED' | 'THU' | 'FRI' | 'SAT';
+  targetStartTime: string;
+  targetEndTime: string;
+  semester?: number;
 }
 
 export interface Guardian {

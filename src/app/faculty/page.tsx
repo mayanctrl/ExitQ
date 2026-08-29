@@ -1,16 +1,24 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { Lecture, ExtraLecture } from '@/lib/types';
-import { SEED_FACULTY } from '@/lib/seed';
-import { PlusCircle, CalendarDays, BookOpen, Clock, Users, Zap } from 'lucide-react';
+import { ExtraLecture, User } from '@/lib/types';
+import { PlusCircle, CalendarDays, BookOpen, Users, Zap, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 
 export default function FacultyDashboard() {
-  const faculty = SEED_FACULTY[0];
+  const [user, setUser] = useState<User | null>(null);
   const [extraLectures, setExtraLectures] = useState<ExtraLecture[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    fetch('/api/auth/me')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.user) setUser(data.user);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+
     fetch('/api/timetable')
       .then((res) => res.json())
       .then((data) => setExtraLectures(data.extraLectures || []));
@@ -18,72 +26,76 @@ export default function FacultyDashboard() {
 
   return (
     <div className="space-y-6">
-      {/* Welcome banner & quick action button */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-3xl border border-[#e2dfd5] shadow-xs">
+      {/* Welcome banner */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-[#e2dfd5]">
         <div>
-          <span className="text-xs font-bold text-[#588157] uppercase tracking-wider">
-            FACULTY PORTAL & TIMETABLE CONTROL
-          </span>
-          <h1 className="text-2xl font-extrabold text-[#344e41] tracking-tight mt-0.5">
-            Welcome, {faculty.name}
+          <h1 className="text-2xl font-black text-[#344e41] tracking-tight">
+            Faculty Control Center
           </h1>
-          <p className="text-xs text-gray-500 mt-1">
-            Department of Computer Science & Engineering • DBMS & OS In-charge
+          <p className="text-xs text-gray-500 mt-0.5">
+            Logged in as {user?.name || 'Prof. Rajesh Kumar'} • {user?.department || 'Computer Science & Engineering'}
           </p>
         </div>
 
-        <Link
-          href="/faculty/extra-lectures"
-          className="inline-flex items-center gap-2 px-5 py-3 bg-[#588157] text-white font-extrabold text-xs rounded-2xl hover:bg-[#3a5a40] transition-colors shadow-xs"
-        >
-          <PlusCircle className="h-4 w-4 text-[#dad7cd]" /> Schedule Extra Lecture →
-        </Link>
-      </div>
-
-      {/* Today's Classes Summary */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-white p-5 rounded-2xl border border-[#e2dfd5] shadow-xs space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Today's Lectures</span>
-            <BookOpen className="h-5 w-5 text-[#588157]" />
-          </div>
-          <div className="text-3xl font-extrabold text-[#344e41]">2 Classes</div>
-          <p className="text-[11px] text-gray-500 font-medium">DBMS (10 AM) & OS (11 AM)</p>
-        </div>
-
-        <div className="bg-white p-5 rounded-2xl border border-[#e2dfd5] shadow-xs space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Scheduled Extra Lectures</span>
-            <Zap className="h-5 w-5 text-[#b78103]" />
-          </div>
-          <div className="text-3xl font-extrabold text-[#b78103]">{extraLectures.length}</div>
-          <p className="text-[11px] text-gray-500 font-medium">Triggers ExitQ Auto-Evaluation</p>
-        </div>
-
-        <div className="bg-white p-5 rounded-2xl border border-[#e2dfd5] shadow-xs space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Assigned Students</span>
-            <Users className="h-5 w-5 text-[#3a5a40]" />
-          </div>
-          <div className="text-3xl font-extrabold text-[#344e41]">68</div>
-          <p className="text-[11px] text-gray-500 font-medium">CS Semester 4</p>
+        <div className="flex items-center gap-2">
+          <Link
+            href="/faculty/timetable"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-[#e2dfd5] text-[#344e41] font-bold text-xs rounded-xl hover:bg-[#fafaf7] transition-colors shadow-xs"
+          >
+            <CalendarDays className="h-3.5 w-3.5 text-[#588157]" />
+            <span>Master Timetable</span>
+          </Link>
+          <Link
+            href="/faculty/extra-lectures"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#588157] text-white font-bold text-xs rounded-xl hover:bg-[#3a5a40] transition-colors shadow-xs"
+          >
+            <PlusCircle className="h-3.5 w-3.5" />
+            <span>Schedule Extra Lecture</span>
+          </Link>
         </div>
       </div>
 
-      {/* Extra Lecture Feature Callout Card */}
-      <div className="bg-[#344e41] text-[#dad7cd] p-6 rounded-3xl space-y-3 shadow-md">
-        <div className="flex items-center gap-2 text-[#a3b18a] text-xs font-bold uppercase tracking-wider">
-          <Zap className="h-4 w-4" /> ExitQ Timetable Intelligence Feature
+      {/* Metrics Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div className="bg-white p-4 rounded-xl border border-[#e2dfd5] shadow-xs">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400">ASSIGNED CLASSES</span>
+          <div className="text-2xl font-black text-[#344e41] mt-1">2 Scheduled Today</div>
+          <p className="text-[11px] text-gray-500">DBMS (10 AM) & OS (11 AM)</p>
         </div>
-        <h2 className="text-lg font-bold text-white">Need to schedule an unexpected lecture?</h2>
-        <p className="text-xs text-gray-300 max-w-2xl leading-relaxed">
-          When you add an extra lecture between 2:00 PM – 3:00 PM, ExitQ will automatically scan all approved student exit passes for that time slot. Conditional passes will be automatically revoked to enforce class attendance, while locked permissions will remain protected.
+
+        <div className="bg-white p-4 rounded-xl border border-[#e2dfd5] shadow-xs">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400">EXTRA LECTURES</span>
+          <div className="text-2xl font-black text-[#b78103] mt-1">{extraLectures.length} Published</div>
+          <p className="text-[11px] text-gray-500">Triggers pass conflict evaluation</p>
+        </div>
+
+        <div className="bg-white p-4 rounded-xl border border-[#e2dfd5] shadow-xs">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400">DEPARTMENT STUDENTS</span>
+          <div className="text-2xl font-black text-[#2e7d32] mt-1">CS Sem 4 Active</div>
+          <p className="text-[11px] text-gray-500">Attendance tracking active</p>
+        </div>
+      </div>
+
+      {/* Extra Lecture Conflict Engine Action */}
+      <div className="bg-[#344e41] text-[#dad7cd] p-5 rounded-2xl space-y-2.5 shadow-sm">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2 text-[#a3b18a] text-xs font-bold uppercase tracking-wider">
+            <Zap className="h-4 w-4" /> Timetable Conflict Engine
+          </div>
+          <span className="text-[10px] bg-[#588157] text-white px-2 py-0.5 rounded font-bold">
+            AUTOMATION READY
+          </span>
+        </div>
+        <h2 className="text-base font-bold text-white">Need to schedule an unexpected extra lecture?</h2>
+        <p className="text-xs text-gray-300 leading-relaxed">
+          Adding an extra lecture triggers real-time conflict scanning against student gate passes. Conditional exit passes overlapping with the lecture are automatically revoked, while official locked passes remain protected.
         </p>
         <Link
           href="/faculty/extra-lectures"
-          className="inline-flex items-center gap-2 px-4 py-2 bg-[#588157] text-white text-xs font-bold rounded-xl hover:bg-[#3a5a40] transition-colors mt-2"
+          className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-[#588157] text-white text-xs font-bold rounded-xl hover:bg-[#3a5a40] transition-colors mt-1"
         >
-          Try Demo: Add Extra Lecture (2:00 PM - 3:00 PM) →
+          <span>Open Extra Lecture Conflict Console</span>
+          <ArrowRight className="h-3.5 w-3.5" />
         </Link>
       </div>
     </div>
