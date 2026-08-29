@@ -108,7 +108,7 @@ export default function HODDashboard() {
             </span>
             <Users className="h-5 w-5 text-[#c62828]" />
           </div>
-          <div className="text-3xl font-extrabold text-[#c62828]">{outsideStudents.length + 1}</div>
+          <div className="text-3xl font-extrabold text-[#c62828]">{outsideStudents.length}</div>
           <p className="text-[11px] text-gray-500 font-medium">Gate Exits Verified</p>
         </div>
 

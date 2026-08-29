@@ -1,35 +1,99 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { ExitApplication, ExitPermission, QRToken } from '@/lib/types';
-import { SEED_STUDENTS } from '@/lib/seed';
+import { ExitApplication, ExitPermission, QRToken, Student } from '@/lib/types';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { QRDisplayModal } from '@/components/ui/QRDisplayModal';
-import { Ticket, QrCode, AlertCircle, CheckCircle2, Lock, Zap } from 'lucide-react';
+import { Ticket, QrCode, AlertCircle } from 'lucide-react';
+import Link from 'next/link';
 
 export default function StudentPassesPage() {
-  const student = SEED_STUDENTS[0];
+  const [student, setStudent] = useState<Student | null>(null);
   const [applications, setApplications] = useState<ExitApplication[]>([]);
   const [permissions, setPermissions] = useState<ExitPermission[]>([]);
+  const [qrTokens, setQrTokens] = useState<Map<string, QRToken>>(new Map());
   const [selectedApp, setSelectedApp] = useState<ExitApplication | null>(null);
+  const [selectedQrToken, setSelectedQrToken] = useState<QRToken | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch(`/api/applications?studentId=${student.id}`)
+    fetch('/api/auth/me')
       .then((res) => res.json())
-      .then((data) => setApplications(data.applications || []));
+      .then((data) => {
+        if (data.user && data.user.role === 'STUDENT') {
+          const studentUser = data.user as Student;
+          setStudent(studentUser);
 
-    fetch('/api/permissions')
-      .then((res) => res.json())
-      .then((data) => setPermissions(data.permissions || []));
+          fetch(`/api/applications?studentId=${studentUser.id}`)
+            .then((res) => res.json())
+            .then((appData) => {
+              const apps: ExitApplication[] = appData.applications || [];
+              setApplications(apps);
+
+              // Fetch real QR tokens for each approved application
+              const approvedApps = apps.filter(
+                (a) =>
+                  a.status === 'APPROVED_CONDITIONAL' ||
+                  a.status === 'APPROVED_LOCKED' ||
+                  a.status === 'REVOKED' ||
+                  a.status === 'USED'
+              );
+
+              Promise.all(
+                approvedApps.map((app) =>
+                  fetch(`/api/qr?applicationId=${app.id}`)
+                    .then((res) => res.json())
+                    .then((qrData) => ({ appId: app.id, qrToken: qrData.qrToken as QRToken | null }))
+                )
+              ).then((results) => {
+                const tokenMap = new Map<string, QRToken>();
+                results.forEach(({ appId, qrToken }) => {
+                  if (qrToken) {
+                    tokenMap.set(appId, qrToken);
+                  }
+                });
+                setQrTokens(tokenMap);
+              });
+            });
+
+          fetch('/api/permissions')
+            .then((res) => res.json())
+            .then((permData) => setPermissions(permData.permissions || []));
+        }
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
   }, []);
 
   const openPassModal = (app: ExitApplication) => {
+    const realToken = qrTokens.get(app.id);
     setSelectedApp(app);
+    setSelectedQrToken(realToken || null);
     setModalOpen(true);
   };
 
   const getLinkedPermission = (appId: string) => permissions.find((p) => p.applicationId === appId);
+
+  if (loading) {
+    return (
+      <div className="text-center py-20">
+        <div className="h-8 w-8 border-4 border-[#588157] border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+        <p className="text-xs font-bold text-[#344e41]">Loading Student passes...</p>
+      </div>
+    );
+  }
+
+  if (!student) {
+    return (
+      <div className="bg-white p-8 rounded-3xl border border-[#e2dfd5] text-center space-y-4 max-w-md mx-auto my-12">
+        <p className="text-xs font-bold text-red-500">Not authenticated as a Student.</p>
+        <Link href="/" className="inline-block px-4 py-2 bg-[#344e41] text-white rounded-xl text-xs">
+          Go to Login Page
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -76,7 +140,7 @@ export default function StudentPassesPage() {
                   </div>
 
                   {/* QR Button */}
-                  {app.status !== 'REJECTED' && (
+                  {app.status !== 'REJECTED' && app.status !== 'PENDING' && (
                     <button
                       onClick={() => openPassModal(app)}
                       className="px-4 py-2 bg-[#344e41] text-[#dad7cd] font-bold text-xs rounded-xl hover:bg-[#3a5a40] transition-colors flex items-center gap-2 cursor-pointer shadow-xs"
@@ -86,7 +150,7 @@ export default function StudentPassesPage() {
                   )}
                 </div>
 
-                {/* Revoked Warning Banner (Spec item 27) */}
+                {/* Revoked Warning Banner */}
                 {isRevoked && (
                   <div className="p-3 bg-[#ffebee] border border-[#ffcdd2] rounded-2xl text-xs space-y-1">
                     <div className="font-extrabold text-[#c62828] flex items-center gap-1.5">
@@ -130,23 +194,14 @@ export default function StudentPassesPage() {
         )}
       </div>
 
-      {/* QR Modal */}
+      {/* QR Modal — now uses REAL token from API */}
       {selectedApp && (
         <QRDisplayModal
           isOpen={modalOpen}
           onClose={() => setModalOpen(false)}
           application={selectedApp}
           permission={getLinkedPermission(selectedApp.id)}
-          qrToken={{
-            id: 'qr_demo',
-            token: `exq_tok_${selectedApp.id.toLowerCase()}`,
-            permissionId: selectedApp.id,
-            applicationId: selectedApp.id,
-            studentId: student.id,
-            studentName: student.name,
-            expiresAt: selectedApp.expectedReturnTime,
-            isUsed: selectedApp.status === 'USED',
-          }}
+          qrToken={selectedQrToken || undefined}
         />
       )}
     </div>

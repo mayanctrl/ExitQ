@@ -1,11 +1,45 @@
 'use client';
 
-import React from 'react';
-import { SEED_STUDENTS } from '@/lib/seed';
-import { User, Phone, Mail, GraduationCap, ShieldCheck } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Student } from '@/lib/types';
+import { Phone, Mail } from 'lucide-react';
+import Link from 'next/link';
 
 export default function StudentProfilePage() {
-  const student = SEED_STUDENTS[0];
+  const [student, setStudent] = useState<Student | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch('/api/auth/me')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.user && data.user.role === 'STUDENT') {
+          setStudent(data.user as Student);
+        }
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="text-center py-20">
+        <div className="h-8 w-8 border-4 border-[#588157] border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+        <p className="text-xs font-bold text-[#344e41]">Loading Student profile...</p>
+      </div>
+    );
+  }
+
+  if (!student) {
+    return (
+      <div className="bg-white p-8 rounded-3xl border border-[#e2dfd5] text-center space-y-4 max-w-md mx-auto my-12">
+        <p className="text-xs font-bold text-red-500">Not authenticated as a Student.</p>
+        <Link href="/" className="inline-block px-4 py-2 bg-[#344e41] text-white rounded-xl text-xs">
+          Go to Login Page
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

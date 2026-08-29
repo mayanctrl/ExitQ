@@ -18,15 +18,21 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
     fetch('/api/auth/me')
       .then((res) => res.json())
       .then((data) => {
-        if (data.user) setUser(data.user);
+        if (data.user) {
+          setUser(data.user);
+        }
       })
       .catch(() => {});
-
-    fetch(`/api/notifications?userId=${studentUser.id}`)
-      .then((res) => res.json())
-      .then((data) => setNotifications(data.notifications || []))
-      .catch(() => {});
   }, []);
+
+  useEffect(() => {
+    if (user?.id) {
+      fetch(`/api/notifications?userId=${user.id}`)
+        .then((res) => res.json())
+        .then((data) => setNotifications(data.notifications || []))
+        .catch(() => {});
+    }
+  }, [user]);
 
   const handleMarkRead = (id: string) => {
     fetch('/api/notifications', {

@@ -1,15 +1,14 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { SEED_STUDENTS } from '@/lib/seed';
-import { ExitReasonCategory } from '@/lib/types';
-import { Send, Clock, MapPin, Users, FileText, CheckCircle2 } from 'lucide-react';
+import { ExitReasonCategory, Student } from '@/lib/types';
+import { Send } from 'lucide-react';
+import Link from 'next/link';
 
 export default function StudentExitRequestPage() {
   const router = useRouter();
-  const student = SEED_STUDENTS[0];
-
+  const [student, setStudent] = useState<Student | null>(null);
   const [reasonCategory, setReasonCategory] = useState<ExitReasonCategory>('MEDICAL');
   const [reasonDescription, setReasonDescription] = useState('Dental appointment at City Health Clinic.');
   const [destination, setDestination] = useState('City Health Center, MG Road');
@@ -18,11 +17,25 @@ export default function StudentExitRequestPage() {
   const [expectedReturnTime, setExpectedReturnTime] = useState('16:00');
   const [accompanyingCount, setAccompanyingCount] = useState(0);
   const [accompanyingNames, setAccompanyingNames] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [submitLoading, setSubmitLoading] = useState(false);
+
+  useEffect(() => {
+    fetch('/api/auth/me')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.user && data.user.role === 'STUDENT') {
+          setStudent(data.user as Student);
+        }
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
+    if (!student) return;
+    setSubmitLoading(true);
 
     fetch('/api/applications', {
       method: 'POST',
@@ -45,12 +58,33 @@ export default function StudentExitRequestPage() {
     })
       .then((res) => res.json())
       .then((data) => {
-        setLoading(false);
+        setSubmitLoading(false);
         if (data.application) {
           router.push('/student/passes');
         }
-      });
+      })
+      .catch(() => setSubmitLoading(false));
   };
+
+  if (loading) {
+    return (
+      <div className="text-center py-20">
+        <div className="h-8 w-8 border-4 border-[#588157] border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+        <p className="text-xs font-bold text-[#344e41]">Loading request form...</p>
+      </div>
+    );
+  }
+
+  if (!student) {
+    return (
+      <div className="bg-white p-8 rounded-3xl border border-[#e2dfd5] text-center space-y-4 max-w-md mx-auto my-12">
+        <p className="text-xs font-bold text-red-500">Not authenticated as a Student.</p>
+        <Link href="/" className="inline-block px-4 py-2 bg-[#344e41] text-white rounded-xl text-xs">
+          Go to Login Page
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -171,10 +205,11 @@ export default function StudentExitRequestPage() {
           {/* Submit */}
           <button
             type="submit"
-            disabled={loading}
+            disabled={submitLoading}
             className="w-full py-3.5 bg-[#588157] text-white font-extrabold text-xs rounded-xl hover:bg-[#3a5a40] transition-colors shadow-xs flex items-center justify-center gap-2 cursor-pointer mt-4"
           >
-            <Send className="h-4 w-4 text-[#dad7cd]" /> Submit Exit Request (Generate EXQ Reference)
+            <Send className="h-4 w-4 text-[#dad7cd]" />
+            {submitLoading ? 'Submitting request...' : 'Submit Exit Request (Generate EXQ Reference)'}
           </button>
         </form>
       </div>
